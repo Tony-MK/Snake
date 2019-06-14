@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Snake</title>
+	<style type="text/css">
+		body{
+			margin:0;
+		}
+	</style>
+</head>
+<body>
+
+</body>
+<script type="text/javascript">
+	const SPEED = 2; 
+	class Game{
+		snake = null;
+		constructor(){
+			this.canvas = document.createElement("canvas");
+			this.canvas.height = 100;
+			this.canvas.width  = 400;
+			document.body.insertBefore(this.canvas,document.body.childNodes[0]);
+			this.context = this.canvas.getContext('2d');
+			
+		}
+
+		update(){
+			if(this.snake === null){
+				return;
+			}
+
+			snake.update();
+			
+			
+		}
+
+
+		start(){
+			this.interval = setInterval(this.update,50);
+		}
+	}
+	
+
+	class Component{
+		constructor(context,x,y,w,h){
+			this.context = context
+			this.width= w;
+			this.height = h;
+			this.x = x;
+			this.y = y;
+			this.draw();
+		}
+
+		draw(){
+			this.context.fillRect(this.x,this.y,this.width,this.height);
+			
+		}
+		clear(){
+			this.context.clearRect(this.x,this.y,this.width,this.height)
+		}
+	}
+	class Apple extends Component{
+		constructor(ctx){
+			super(ctx,10,10,10,10);
+		}
+		update(){
+			this.clear()
+			this.x = Math.floor(Math.random() * game.canvas.width);
+			this.draw();
+		}
+
+	}
+	class Snake{
+
+		constructor(ctx,x,y,width,height){
+			
+			this.body = [];
+			this.ctx = ctx;
+
+			this.width = width;
+			this.height = height;
+			this.body.push(new Component(ctx,x,y,width,height))
+			this.xVel = 1;
+			this.yVel = 0;
+			document.addEventListener("keydown",(e) => {
+				console.log(e.keyCode);
+				e.preventDefault();
+				switch(e.keyCode){
+					case 37:
+						this.xVel = -SPEED;
+						this.yVel = 0;
+						break;
+					case 38:
+						this.xVel = 0;
+						this.yVel =  -SPEED;
+						break;
+
+					case 39:
+						this.xVel = SPEED;
+						this.yVel = 0;
+						break; 
+					case 40:
+						this.xVel = 0;
+						this.yVel = SPEED;
+						break;
+
+					default:
+						console.log(e.keyCode);
+						break;
+				}
+			});
+			
+
+			return this
+		}
+		update(){
+			var n = this.body.length -1
+			if(this.body[0].x == apple.x && this.body[0].y == apple.y){
+				apple.update();
+				this.body.push(new Component(this.ctx,this.body[n].x + this.xVel,this.body[n].y + this.yVel,this.width,this.height));
+				console.log(this.body)
+			}
+			
+			this.body[n].clear();
+
+
+
+			this.body[n].x = this.body[0].x + this.xVel;
+			this.body[n].y = this.body[0].y + this.yVel;
+
+			if(this.body[n].x < 0){
+				this.body[n].x = game.canvas.width
+			}
+			if(this.body[n].x > game.canvas.width){
+				this.body[n].x = 0
+			}
+
+			if(this.body[n].y < 0){
+				this.body[n].y = game.canvas.height
+			}
+			if(this.body[n].y > game.canvas.height){
+				this.body[n].y = 0
+			}
+			let head = this.body[0];
+			this.body[0] = this.body[n];
+			this.body[n] = head;
+
+			this.body[n].draw();
+		}
+	}
+
+	var game = new Game();
+	let snake  = new Snake(game.context,0,0,40,10);
+	let apple = new Apple(game.context)
+
+	game.start();
+
+</script>
+</html>
