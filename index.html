@@ -6,31 +6,31 @@
 		body{
 			margin:0;
 		}
+		canvas{
+			border-width: 2px;
+			border-style: solid;
+			width:  99vw;
+			height: 99vh;
+		}
 	</style>
 </head>
 <body>
 
 </body>
 <script type="text/javascript">
-	const SPEED = 1; 
+	const FPS = 60;
+	const SPEED = 0.1/FPS; 
+
 	class Game{
 		constructor(){
 			this.canvas = document.createElement("canvas");
-			this.canvas.height = 100;
-			this.canvas.width  = 400;
 			document.body.insertBefore(this.canvas,document.body.childNodes[0]);
 			this.context = this.canvas.getContext('2d');
 			
 		}
 
 		update(){
-			apple.clear()
-			if(snake.body[0].x === apple.x && snake.body[0].y === apple.y){
-				apple.x = Math.random() * game.canvas.width
-				apple.y = Math.random() * game.canvas.height;
-				snake.addWeight();
-			}
-			apple.draw();
+			apple.update();
 			snake.update();
 		}
 		end(){
@@ -38,7 +38,7 @@
 			document.body.innerHTML = "Game Ended"
 		}
 		start(){
-			this.interval = setInterval(this.update,60);
+			this.interval = setInterval(this.update,FPS);
 		}
 	}
 	
@@ -51,6 +51,10 @@
 			this.x = x;
 			this.y = y;
 			this.color = color;
+			if(color === undefined){
+				this.color =  "#000";
+			}
+		
 			this.draw();
 
 		}
@@ -59,18 +63,47 @@
 			game.context.fillStyle = this.color;
 			game.context.fillRect(this.x,this.y,this.width,this.height);
 
-			
 		}
 		clear(){
+
 			game.context.clearRect(this.x,this.y,this.width,this.height)
 		}
 
 
 	}
-	class Apple extends Component{
+	class Apple{
 		constructor(){
-			super(game.canvas.width/2,game.canvas.height/2,10,10,"#009");
+			this.raduis= 10;
+			this.x = game.canvas.width/2;
+			this.y = game.canvas.height/2;
+			this.update();
+
+			
+
+
 		}
+	
+		update(){
+			game.context.clearRect(this.x, this.y, this.raduis, this.raduis);
+
+			if(snake.body[0].x+snake.width > this.x && this.x > snake.body[0].x-snake.width && 
+				snake.body[0].y+snake.height > this.y && this.y > snake.body[0].y-snake.height){
+
+
+				this.x = Math.random() * game.canvas.width;
+				this.y = Math.random() * game.canvas.height;
+				snake.addWeight();
+			}
+
+
+			game.context.beginPath();
+			game.context.arc(this.x,this.y, 10, 0, 2 * Math.PI);
+			game.context.fillStyle = "#009";
+			game.context.fill();
+
+			
+		}
+
 
 
 	}
@@ -83,31 +116,37 @@
 			
 			this.width = 10;
 			this.height = 10;
-			this.xVel = 1;
+			this.speed = 1;
+			this.xVel = this.speed;
 			this.yVel = 0;
-
-			this.body = Array(new Component(20,20,this.width,this.height),new Component(21,21,this.width,this.height),new Component(22,22,this.width,this.height));
+			this.body = Array(new Component(80,20,this.width,this.height));
+			this.addWeight();
+			this.addWeight();
 			this.addWeight();
 			document.addEventListener("keydown",(e) => {
 				console.log(e.keyCode);
 				e.preventDefault();
 				switch(e.keyCode){
 					case 37:
-						this.xVel = -SPEED;
+						if (this.xVel >0){break;}
+						this.xVel = -this.speed;
 						this.yVel = 0;
 						break;
 					case 38:
+						if (this.yVel >0){break;}
 						this.xVel = 0;
-						this.yVel =  -SPEED;
+						this.yVel =  -this.speed;
 						break;
 
 					case 39:
-						this.xVel = SPEED;
+						if (this.xVel >0){break;}
+						this.xVel = this.speed;
 						this.yVel = 0;
 						break; 
 					case 40:
+						if (this.yVel >0){break;}
 						this.xVel = 0;
-						this.yVel = SPEED;
+						this.yVel = this.speed;
 						break;
 
 					default:
@@ -119,20 +158,20 @@
 		addWeight(){
 			this.body.push(
 					new Component(
-						this.body[this.body_size].x,
+						this.body[this.body_size].x-10,
 						this.body[this.body_size].y,
 						this.width,
 						this.height,
 					)
 				);
+			console.log(this.body)
 			this.body_size++
 		}
 		update(){
-				
 
 			this.body[this.body_size].clear();
-			this.body[this.body_size].x = this.body[0].x + this.xVel;
-			this.body[this.body_size].y = this.body[0].y + this.yVel;
+			this.body[this.body_size].x = this.body[0].x+Math.floor(this.width *this.xVel);
+			this.body[this.body_size].y = this.body[0].y+Math.floor(this.height*this.yVel);
 
 
 
@@ -149,22 +188,21 @@
 			if(this.body[this.body_size].y > game.canvas.height){
 				this.body[this.body_size].y = 0
 			}
-
-
+			this.body[this.body_size].draw();
 			let head = this.body[this.body_size];
 			this.body.pop();
 			this.body.unshift(head);
 
-			this.body[this.body_size].draw();
+			
 
 
-			for (var i = this.body.length -1; i > 0; i--) {
-				if(this.body[i].x === this.body[0].x && this.body[i].y === this.body[0].y){
-					console.log(i);
-					console.log()
-					game.end();
-				}
-			}	
+			//for (var i = this.body.length -1; i > 0; i--) {
+			//	if(this.body[i].x === this.body[0].x && this.body[i].y === this.body[0].y){
+			//		console.log(i);
+			//		console.log()
+			//		game.end();
+			//	}
+			//}	
 
 		
 
