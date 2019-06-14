@@ -20,29 +20,68 @@
 <script type="text/javascript">
 	const FPS = 60;
 	const SPEED = 0.1/FPS; 
-	function postion(n,y){
-	return y ? parseInt(game.canvas.height*(n)) : parseInt(game.canvas.width*(n))
-	}
+	
 	class Game{
 		constructor(){
+			this.score = 0
 			this.canvas = document.createElement("canvas");
 			document.body.insertBefore(this.canvas,document.body.childNodes[0]);
 			this.context = this.canvas.getContext('2d');
+			this.drawText("Snake");
+
+			this.interval = undefined;
+			
+		}
+		postion(n,y){
+		return y ? parseInt(this.canvas.height*(n)) : parseInt(this.canvas.width*(n))
+		}
+
+		drawText(text,x,y,size){
+			if (size === undefined){
+				console.log(size+"px Arial")
+				this.context.font = "30px Arial";
+			}else{
+				console.log(size+"px Arial")
+				this.context.font = size+"px Arial";
+			}
+			this.context.textAlign = "center";
+			this.context.fillStyle = "#000";
+			if(x === undefined){
+				this.context.fillText(text,this.postion(.5),this.postion(.5,true));
+				return;
+			}
+			this.context.fillText(text,x,y)
+			return
 			
 		}
 
 		update(){
+			
 			apple.update();
 			snake.update();
 		}
 		end(){
+			console.log(this.score)
 			clearInterval(this.interval);
-			game.context.font = "30px Arial";
-			game.context.textAlign = "center";
-			game.context.fillStyle = "#000";
-			game.context.fillText("GAME OVER",postion(.5),postion(0.5,true))
+			this.drawText("GAME OVER")
 		}
+		clearCanvas(){
+			this.context.clearRect(0,0, this.canvas.width, this.canvas.height);
+
+		}
+		reset(){
+			clearInterval(this.interval);
+			this.score = 0;
+
+		}
+
 		start(){
+
+			this.clearCanvas()
+			snake = new Snake();
+
+			apple = new Apple();
+			
 			this.interval = setInterval(this.update,FPS);
 		}
 	}
@@ -94,8 +133,11 @@
 			if(snake.body[0].x+snake.width > this.x && this.x > snake.body[0].x-snake.width && 
 				snake.body[0].y+snake.height > this.y && this.y > snake.body[0].y-snake.height){
 
-				game.context.clearRect(0,0, game.canvas.width, game.canvas.height);
+				game.clearCanvas();
 
+				game.score += 1;
+				game.drawText(game.score,Math.floor(game.canvas.width*0.9),Math.floor(game.canvas.height*0.1),10);
+				
 				
 
 
@@ -110,10 +152,6 @@
 
 
 			}
-
-
-			
-
 			
 		}
 
@@ -139,6 +177,13 @@
 				e.preventDefault();
 				console.log(e.keyCode)
 				switch(e.keyCode){
+					case 32:
+						if (game.score > 0){
+							game.reset();
+						}else{
+							game.start();
+						}
+						break;
 					case 37:
 						if (this.xVel > 0){break;}
 						this.xVel = -this.speed;
@@ -182,12 +227,11 @@
 				this.body_size++
 				n--;
 			}
-			console.log(this.body)
 			
 		}
 		
 		update(){
-						this.body[this.body_size].clear();
+			this.body[this.body_size].clear();
 
 			this.body[this.body_size].x = this.body[0].x+Math.floor(this.width *this.xVel);
 			this.body[this.body_size].y = this.body[0].y+Math.floor(this.height*this.yVel);
