@@ -1,2 +1,8 @@
-"# Snake-Game" 
-Remember the old game called Snake on Nokia phones. This is a web recration using Javascript;
+# Snake-Game
+
+
+A recreation of the ancient game called snake using nothing but pure Javascript.
+
+
+
+

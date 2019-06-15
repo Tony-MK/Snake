@@ -1,20 +1,35 @@
 <!DOCTYPE html>
 <html>
 <head>
+	<meta charset="utf-8">
 	<title>Snake</title>
 	<style type="text/css">
 		body{
 			margin:0;
+			text-align: center;
 		}
 		canvas{
-			border-width: 2px;
+			border-width: 0.2vw;
 			border-style: solid;
-			width:  99vw;
-			height: 99vh;
+			border-color: red;
+			width:  98vw;
+			height: 96vh;
+		}
+		div{
+			text-align: center;
+			width: 98vw;
+			height: 3vh;
+			font-size: 2vh;
+		}
+		a{
+			font-weight: bold;
 		}
 	</style>
 </head>
 <body>
+	<div>
+		<i>Recreated by</i> : <a href="tony-mk.github.io/portfolio"> Antony Kithinzi </a>
+	</div>
 
 </body>
 <script type="text/javascript">
@@ -26,7 +41,6 @@
 	
 	class Game{
 		constructor(){
-			this.score = 0
 			this.canvas = document.createElement("canvas");
 			document.body.insertBefore(this.canvas,document.body.childNodes[0]);
 			this.context = this.canvas.getContext('2d');
@@ -34,10 +48,13 @@
 			this.resize();
 			this.Text = {
 				'title':new TextComponent("SNAKE",this.unitX*5,this.unitY*5,35,"#090"),
+				'pause':new TextComponent("PAUSED",this.unitX*5,this.unitY*5,35,"#900"),
 				'over':new TextComponent("GAME OVER",this.unitX*5,this.unitY*5,25,"#900"),
 				'act':new TextComponent("Press SPACE",this.unitX*5,this.unitY*8,10,"#009")
 			}
-			this.score = new TextComponent(0,this.unitX*8,this.unitY*0.5,10);
+			this.score = new TextComponent(0,this.unitX*9,this.unitY*1,10);
+			this.ended = true;
+			this.paused = false;
 		}
 		resize(){
 			this.unitX = this.postion(0.1);
@@ -50,6 +67,19 @@
 
 			
 		}
+		pause(){
+			clearInterval(this.interval);
+			//this.Text['pause'].draw();
+			//this.Text['pause'].blink();
+			this.paused = true;
+		}
+		resume(){
+			//this.Text['pause'].stopBlinking();
+			apple.draw();
+			this.interval = setInterval(this.update,FPS);
+			this.paused = false;
+
+		}
 		postion(n,y){
 			return y ? parseInt(this.canvas.height*(n)) : parseInt(this.canvas.width*(n))
 		}
@@ -61,6 +91,7 @@
 			snake.update();
 		}
 		end(){
+			this.ended = true;
 			clearInterval(this.interval);
 			this.Text['over'].draw();
 			this.Text['act'].blink();
@@ -81,9 +112,9 @@
 		}
 
 		start(){
-			this.reset()
+			this.reset();
+			this.ended = false;
 			snake = new Snake();
-
 			apple = new Apple();
 			this.interval = setInterval(this.update,FPS);
 		}
@@ -155,6 +186,7 @@
 
 				game.clearCanvas();
 
+
 				game.score.text += 1;
 				game.score.draw();
 		
@@ -168,6 +200,9 @@
 
 				
 				snake.grow(1);
+				for (var i = snake.body_size; i >= 0; i--) {
+					snake.body[i].draw()
+				}
 							
 
 
@@ -181,10 +216,10 @@
 	}
 	class Snake{
 		
-		body_size = 0;
 		constructor(){
 			
 			
+			this.body_size = 0;
 
 			this.width = 10;
 			this.height = 10;
@@ -192,7 +227,6 @@
 			this.xVel = this.speed;
 			this.yVel = 0;
 			this.body = Array(new BodyPart(80,20));
-			this.grow(3);
 
 			
 		}
@@ -273,11 +307,18 @@
 	game.initalize();
 	document.addEventListener("keydown",(e) => {
 			e.preventDefault();
-			console.log(e.keyCode)
 			switch(e.keyCode){
 				case 32:
-					if (game.score > 0){
-						game.reset();
+					if (game.score.text > 0){
+						if(game.ended){
+							game.reset();
+						}else{
+							if(game.paused){
+								game.resume();
+							}else{
+								game.pause();
+							}
+						}
 					}else{
 						game.start();
 					}
