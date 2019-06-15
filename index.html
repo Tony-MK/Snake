@@ -20,6 +20,9 @@
 <script type="text/javascript">
 	const FPS = 60;
 	const SPEED = 0.1/FPS; 
+	const Blink_Rate = 500;
+	const Snake_Width = 10;
+	const Snake_Height = 10;
 	
 	class Game{
 		constructor(){
@@ -27,33 +30,30 @@
 			this.canvas = document.createElement("canvas");
 			document.body.insertBefore(this.canvas,document.body.childNodes[0]);
 			this.context = this.canvas.getContext('2d');
-			this.drawText("Snake");
+			this.context.imageSmoothingEnabled= true;
+			this.resize();
+			this.Text = {
+				'title':new TextComponent("SNAKE",this.unitX*5,this.unitY*5,35,"#090"),
+				'over':new TextComponent("GAME OVER",this.unitX*5,this.unitY*5,25,"#900"),
+				'act':new TextComponent("Press SPACE",this.unitX*5,this.unitY*8,10,"#009")
+			}
+			this.score = new TextComponent(0,this.unitX*8,this.unitY*0.5,10);
+		}
+		resize(){
+			this.unitX = this.postion(0.1);
+			this.unitY = this.postion(0.1,true);
+		}
+		initalize(){
+			this.clearCanvas()
+			this.Text['title'].draw();
+			this.Text['act'].blink();
 
-			this.interval = undefined;
 			
 		}
 		postion(n,y){
-		return y ? parseInt(this.canvas.height*(n)) : parseInt(this.canvas.width*(n))
+			return y ? parseInt(this.canvas.height*(n)) : parseInt(this.canvas.width*(n))
 		}
 
-		drawText(text,x,y,size){
-			if (size === undefined){
-				console.log(size+"px Arial")
-				this.context.font = "30px Arial";
-			}else{
-				console.log(size+"px Arial")
-				this.context.font = size+"px Arial";
-			}
-			this.context.textAlign = "center";
-			this.context.fillStyle = "#000";
-			if(x === undefined){
-				this.context.fillText(text,this.postion(.5),this.postion(.5,true));
-				return;
-			}
-			this.context.fillText(text,x,y)
-			return
-			
-		}
 
 		update(){
 			
@@ -61,55 +61,72 @@
 			snake.update();
 		}
 		end(){
-			console.log(this.score)
 			clearInterval(this.interval);
-			this.drawText("GAME OVER")
+			this.Text['over'].draw();
+			this.Text['act'].blink();
+
 		}
 		clearCanvas(){
 			this.context.clearRect(0,0, this.canvas.width, this.canvas.height);
 
+
 		}
 		reset(){
+			this.Text['act'].stopBlinking();
 			clearInterval(this.interval);
-			this.score = 0;
+			this.clearCanvas()
+			this.score.text = 0;
+			this.score.draw();
 
 		}
 
 		start(){
-
-			this.clearCanvas()
+			this.reset()
 			snake = new Snake();
 
 			apple = new Apple();
-			
 			this.interval = setInterval(this.update,FPS);
+		}
+	}
+
+	class TextComponent{
+		constructor(text,x,y,size,color,font){
+			this.text = text;
+			this.x = x;
+			this.y = y;
+			this.size = (size === undefined ? 30:size)
+			this.color = (color === undefined? "#000": color);
+			this.font = this.size+"px " +  (font === undefined ? "Arial":font);
+
+		}
+		blink(){
+			if(this.blinker === undefined){
+				this.blinker = setInterval(()=>{
+					this.draw();
+					setTimeout(()=>{this.clear();},Blink_Rate);
+				},Blink_Rate*2);
+			}
+		}
+
+		stopBlinking(){
+			clearInterval(this.blinker);
+			this.blinker = undefined;
+		}
+		draw(){
+
+			game.context.font = this.font;
+			game.context.textAlign = "center";
+			game.context.fillStyle = this.color;
+			game.context.fillText(this.text,this.x,this.y);
+		}
+
+		clear(){
+			game.context.clearRect(0,this.y-this.size,game.canvas.width,this.size)
 		}
 	}
 	
 
-	class Component{
-		constructor(x,y,w,h,color){
-
-			this.width= w;
-			this.height = h;
-			this.x = x;
-			this.y = y;
-			this.draw();
-
-		}
-
-		draw(){
-			game.context.fillStyle = "#090"
-			game.context.fillRect(this.x,this.y,this.width,this.height);
-
-		}
-		clear(){
-
-			game.context.clearRect(this.x,this.y,this.width,this.height)
-		}
-
-
-	}
+	
 	class Apple{
 		constructor(){
 			this.raduis= 3;
@@ -127,26 +144,30 @@
 			game.context.fillStyle = "#900";
 			game.context.fill();
 		}
+
 		update(){
 			
-
-			if(snake.body[0].x+snake.width > this.x && this.x > snake.body[0].x-snake.width && 
-				snake.body[0].y+snake.height > this.y && this.y > snake.body[0].y-snake.height){
+			// 
+			if(	snake.body[0].x+snake.width > this.x && this.x > snake.body[0].x-snake.width 
+					&&  
+				snake.body[0].y+snake.height > this.y && this.y > snake.body[0].y-snake.height
+				){
 
 				game.clearCanvas();
 
-				game.score += 1;
-				game.drawText(game.score,Math.floor(game.canvas.width*0.9),Math.floor(game.canvas.height*0.1),10);
+				game.score.text += 1;
+				game.score.draw();
+		
 				
 				
 
 
-				this.x = Math.random() * game.canvas.width;
-				this.y = Math.random() * game.canvas.height;
+				this.x = 10 + Math.random() * game.canvas.width-10;
+				this.y = 10 + Math.random() * game.canvas.height-10;
 				this.draw();
 
 				
-				snake.addWeight(1);
+				snake.grow(1);
 							
 
 
@@ -170,111 +191,123 @@
 			this.speed = 1;
 			this.xVel = this.speed;
 			this.yVel = 0;
-			this.body = Array(new Component(80,20,this.width,this.height));
-			this.addWeight(3);
+			this.body = Array(new BodyPart(80,20));
+			this.grow(3);
 
-			document.addEventListener("keydown",(e) => {
-				e.preventDefault();
-				console.log(e.keyCode)
-				switch(e.keyCode){
-					case 32:
-						if (game.score > 0){
-							game.reset();
-						}else{
-							game.start();
-						}
-						break;
-					case 37:
-						if (this.xVel > 0){break;}
-						this.xVel = -this.speed;
-						this.yVel = 0;
-						break;
-
-
-					case 38:
-						if (this.yVel > 0){break;}
-						this.xVel = 0;
-						this.yVel =  -this.speed;
-						break;
-
-					case 39:
-						if (this.xVel < 0){break;}
-						this.xVel = this.speed;
-						this.yVel = 0;
-						break; 
-					case 40:
-						if (this.yVel < 0){break;}
-						this.xVel = 0;
-						this.yVel = this.speed;
-						break;
-
-					default:
-						console.log(e.keyCode);
-						break;
-				}
-			});
-		}
-		addWeight(n){
-			while (n > 0) {
-				this.body.push(
-					new Component(
-						this.body[this.body_size].x-10,
-						this.body[this.body_size].y,
-						this.width,
-						this.height,
-					)
-				);
-				this.body_size++
-				n--;
-			}
 			
+		}
+		grow(n){
+			
+			let x = this.body[this.body_size].x
+			if(this.xVel !== 0){x-=this.width}
+
+			let y = this.body[this.body_size].y
+			if(this.yVel !== 0){y-=this.height}
+			this.body.push(new BodyPart(x,y));
+			this.body_size++
+			if(n > 0){this.grow(--n);}
+			return;
+
+
 		}
 		
 		update(){
-			this.body[this.body_size].clear();
+			//Checking if game is over
 
-			this.body[this.body_size].x = this.body[0].x+Math.floor(this.width *this.xVel);
-			this.body[this.body_size].y = this.body[0].y+Math.floor(this.height*this.yVel);
-
-
-
-			
-
-
-			
-
-			this.body[this.body_size].draw();
-			let head = this.body[this.body_size];
-			this.body.pop();
-			this.body.unshift(head);
-
-			if(this.body[0].x < 0 || this.body[0].x > game.canvas.width || this.body[0].y < 0 || this.body[0].y > game.canvas.height){
-				game.end()
+			//Snake touched the boundaries
+			if(this.body[0].x <= 0 || this.body[0].x
+				>= game.canvas.width || this.body[0].y <= 0 || this.body[0].y >= game.canvas.height){
+					game.end();
+					return
 			}
 
-			for (var i = this.body.length -1; i > 0; i--) {
+			//Snake eat himself
+			for (var i = this.body.length; i < this.body.length; i++) {
 				if(this.body[i].x === this.body[0].x && this.body[i].y === this.body[0].y){
 					this.body[this.body_size].fillStyle = "#090";
 					game.end();
+					return
 				}
 			}
 
+			//Else update the snakes postion
 
-				
 
-		
 
-			
+			this.body[this.body_size].clear();
+ 			this.body[this.body_size].x = this.body[0].x+Math.floor(this.width *this.xVel);
+			this.body[this.body_size].y = this.body[0].y+Math.floor(this.height*this.yVel);
+			this.body[this.body_size].draw();
+
+			this.body.unshift(this.body[this.body_size]);
+			this.body.pop();
 
 			
 		}
+
+
+	}
+
+	class BodyPart{
+		constructor(x,y){
+			this.x = x;this.y = y;
+			this.draw();
+		}
+
+		draw(){
+			game.context.fillStyle = "#090"
+			game.context.fillRect(this.x,this.y,Snake_Width,Snake_Height);
+
+		}
+
+
+		clear(){
+			game.context.clearRect(this.x,this.y,Snake_Width,Snake_Height);
+		}
+
+
 	}
 
 	var game = new Game();
-	let snake  = new Snake();
-	let apple = new Apple()
+	let snake; let apple;
+	game.initalize();
+	document.addEventListener("keydown",(e) => {
+			e.preventDefault();
+			console.log(e.keyCode)
+			switch(e.keyCode){
+				case 32:
+					if (game.score > 0){
+						game.reset();
+					}else{
+						game.start();
+					}
+					break;
+				case 37:
+					if (snake.xVel > 0){break;}
+					snake.xVel = -snake.speed;
+					snake.yVel = 0;
+					break;
 
-	game.start();
+
+				case 38:
+					if (snake.yVel > 0){break;}
+					snake.xVel = 0;
+					snake.yVel =  -snake.speed;
+					break;
+
+				case 39:
+					if (snake.xVel < 0){break;}
+					snake.xVel = snake.speed;
+					snake.yVel = 0;
+					break; 
+				case 40:
+					if (snake.yVel < 0){break;}
+					snake.xVel = 0;
+					snake.yVel = snake.speed;
+					break;
+			}
+		});
+
 
 </script>
 </html>
