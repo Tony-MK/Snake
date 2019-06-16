@@ -184,10 +184,10 @@ class Snake{
 	}
 	grow(n){
 		
-		let x = this.body[this.body_size].x
+		let x = this.body[this.body_size].x-this.xVel
 		if(this.xVel !== 0){x-=this.width}
 
-		let y = this.body[this.body_size].y
+		let y = this.body[this.body_size].y-this.yVel
 		if(this.yVel !== 0){y-=this.height}
 		this.body.push(new BodyPart(x,y));
 		this.body_size++
@@ -198,12 +198,20 @@ class Snake{
 	}
 	
 	update(){
+		//Snake eat himself
+		for (var i = this.body_size; i > 0; i--) {
+			if(this.body[i].x === this.body[0].x && this.body[i].y === this.body[0].y){
+				this.body[this.body_size].fillStyle = "#090";
+				game.end();
+				return
+			}
+		}
 		
 
 		// update the snakes postion
 
 		this.body[this.body_size].clear();
-			this.body[this.body_size].x = this.body[0].x+Math.floor(this.width *this.xVel);
+		this.body[this.body_size].x = this.body[0].x+Math.floor(this.width *this.xVel);
 		this.body[this.body_size].y = this.body[0].y+Math.floor(this.height*this.yVel);
 		this.body[this.body_size].draw();
 
@@ -223,14 +231,7 @@ class Snake{
 		
 
 		
-		//Snake eat himself
-		for (var i = this.body_size; i > 1; i--) {
-			if(this.body[i].x === this.body[0].x && this.body[i].y === this.body[0].y){
-				this.body[this.body_size].fillStyle = "#090";
-				game.end();
-				return
-			}
-		}
+		
 
 		
 	}
